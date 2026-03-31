@@ -27,6 +27,7 @@ const OBS_NUMBERS = ['0', '2', '4', '6', '8', '10'];
 const OBS_LETTERS = ['', 'C', 'K', 'L', 'CK', 'KL', 'CKL', 'AD', 'B'];
 const OBS_FREQUENCIES = ['', 'X1', 'X2', 'X3', 'X4', 'X5', 'AD'];
 const POST_PEAK_DAYS = ['1', '2', '3'];
+const STRESS_OPTIONS = ['n/n', 's/n', 'n/s', 's/s'];
 const SENSATIONS = ['dry', 'smooth', 'damp', 'wet', 'lubricative'];
 
 export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, onSave, onClose }) {
@@ -36,6 +37,7 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
     observation_number: existing?.observation_number || '',
     observation_letters: existing?.observation_letters || '',
     observation_frequency: existing?.observation_frequency || '',
+    stress_indicator: existing?.stress_indicator || '',
     sensation: existing?.sensation || '',
     is_peak_day: existing?.is_peak_day || false,
     is_menstruation: existing?.is_menstruation || false,
@@ -147,23 +149,50 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
 
             {/* Post-peak day number for green_baby */}
             {isGreenBaby && (
-              <div>
-                <label className="label">Post-Peak Day</label>
-                <div className="flex gap-3">
-                  {POST_PEAK_DAYS.map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setForm({ ...form, stamp_symbol: n })}
-                      className={`w-10 h-10 rounded-full border-2 font-bold text-sm transition-all
-                        ${form.stamp_symbol === n
-                          ? 'bg-green-600 border-green-700 text-white'
-                          : 'border-gray-300 text-gray-700 hover:border-green-500'}`}
-                    >
-                      {n}
-                    </button>
-                  ))}
+              <div className="space-y-4">
+                <div>
+                  <label className="label">Post-Peak Day</label>
+                  <div className="flex gap-3">
+                    {POST_PEAK_DAYS.map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setForm({ ...form, stamp_symbol: n, stress_indicator: n !== '3' ? '' : form.stress_indicator })}
+                        className={`w-10 h-10 rounded-full border-2 font-bold text-sm transition-all
+                          ${form.stamp_symbol === n
+                            ? 'bg-green-600 border-green-700 text-white'
+                            : 'border-gray-300 text-gray-700 hover:border-green-500'}`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Stress indicator — only for post-peak day 3 */}
+                {form.stamp_symbol === '3' && (
+                  <div>
+                    <label className="label">
+                      Stress Indicator
+                      <span className="text-gray-400 font-normal ml-1">— n = normal · s = stress</span>
+                    </label>
+                    <div className="flex gap-2">
+                      {STRESS_OPTIONS.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setForm({ ...form, stress_indicator: form.stress_indicator === opt ? '' : opt })}
+                          className={`px-4 py-2 rounded-lg border-2 text-sm font-mono font-semibold transition-all
+                            ${form.stress_indicator === opt
+                              ? 'bg-indigo-600 border-indigo-600 text-white'
+                              : 'border-gray-300 text-gray-700 hover:border-indigo-400'}`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

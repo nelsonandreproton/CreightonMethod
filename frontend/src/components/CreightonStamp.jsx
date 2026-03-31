@@ -67,7 +67,7 @@ export default function CreightonStamp({ observation, size = 'md' }) {
   const {
     stamp_color, stamp_symbol,
     observation_number, observation_letters, observation_frequency,
-    is_peak_day,
+    stress_indicator, is_peak_day,
   } = observation;
 
   const style = STAMP_STYLES[stamp_color] || STAMP_STYLES.white;
@@ -134,6 +134,11 @@ export default function CreightonStamp({ observation, size = 'md' }) {
       {/* P below stamp for non-white_baby peak days (fallback) */}
       {is_peak_day && stamp_color !== 'white_baby' && (
         <span className="text-xs font-bold text-rose-600 leading-none">P</span>
+      )}
+
+      {/* Stress indicator below green_baby day 3 */}
+      {stamp_color === 'green_baby' && stamp_symbol === '3' && stress_indicator && (
+        <span className="text-xs font-mono font-semibold text-indigo-600 leading-none">{stress_indicator}</span>
       )}
     </div>
   );
