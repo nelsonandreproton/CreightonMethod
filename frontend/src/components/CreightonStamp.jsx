@@ -6,7 +6,9 @@
  *   brown      - Brown/spotting bleeding
  *   green      - Dry day (no mucus)
  *   white_baby - Mucus/fertile (white circle with baby symbol)
- *   green_baby - Post-peak days 1-3 (green circle with baby symbol)
+ *                When is_peak_day=true, shows a P badge on top of the stamp
+ *   green_baby - Post-peak days 1–3 (green circle with baby symbol)
+ *                stamp_symbol holds '1', '2', or '3' — shown above the stamp
  *   yellow     - Special / unusual discharge
  *   white      - Plain white (beginning or end of special cases)
  */
@@ -62,47 +64,75 @@ export default function CreightonStamp({ observation, size = 'md' }) {
     );
   }
 
-  const { stamp_color, stamp_symbol, observation_number, observation_letters, is_peak_day } = observation;
-  const style = STAMP_STYLES[stamp_color] || STAMP_STYLES.white;
+  const {
+    stamp_color, stamp_symbol,
+    observation_number, observation_letters, observation_frequency,
+    is_peak_day,
+  } = observation;
 
+  const style = STAMP_STYLES[stamp_color] || STAMP_STYLES.white;
   const sizeClass = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-12 h-12 text-sm';
 
-  // Build the label inside the stamp
-  let innerLabel = '';
+  // Inner label inside the circle
+  let innerLabel = null;
   if (stamp_color === 'red' || stamp_color === 'brown') {
-    innerLabel = stamp_symbol || '';
+    innerLabel = <span className="leading-none font-bold">{stamp_symbol || ''}</span>;
   } else if (stamp_color === 'white_baby' || stamp_color === 'green_baby') {
-    innerLabel = '👶';
-  } else if (stamp_color === 'green') {
-    innerLabel = '';
+    innerLabel = <span className="text-base leading-none">👶</span>;
   } else if (stamp_color === 'yellow') {
-    innerLabel = stamp_symbol || '';
+    innerLabel = <span className="leading-none">{stamp_symbol || ''}</span>;
   }
+
+  // Build observation code string
+  const obsCode = [
+    observation_number,
+    observation_letters,
+    observation_frequency ? ` ${observation_frequency}` : '',
+  ].filter(Boolean).join('');
 
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <div
-        className={`
-          rounded-full border-2 ${style.bg} ${style.border} ${style.text} ${sizeClass}
-          flex items-center justify-center font-bold relative select-none
-          shadow-sm
-        `}
-        title={`Day observation: ${stamp_color}${stamp_symbol ? ' ' + stamp_symbol : ''}`}
-      >
-        {stamp_color === 'white_baby' || stamp_color === 'green_baby' ? (
-          <span className="text-base leading-none">👶</span>
-        ) : (
-          <span className="leading-none">{innerLabel}</span>
+      {/* Post-peak day number above green_baby stamp */}
+      {stamp_color === 'green_baby' && stamp_symbol && (
+        <span className="text-xs font-bold text-green-700 leading-none">{stamp_symbol}</span>
+      )}
+
+      {/* The stamp circle — relative so we can overlay the P badge */}
+      <div className="relative flex items-center justify-center">
+        <div
+          className={`
+            rounded-full border-2 ${style.bg} ${style.border} ${style.text} ${sizeClass}
+            flex items-center justify-center font-bold select-none shadow-sm
+          `}
+          title={`${stamp_color}${stamp_symbol ? ' ' + stamp_symbol : ''}${obsCode ? ' ' + obsCode : ''}`}
+        >
+          {innerLabel}
+        </div>
+
+        {/* P badge on top of white_baby when it's peak day */}
+        {stamp_color === 'white_baby' && is_peak_day && (
+          <span
+            className={`
+              absolute -top-2 left-1/2 -translate-x-1/2
+              bg-rose-600 text-white font-bold rounded-full
+              ${size === 'sm' ? 'text-[9px] w-3.5 h-3.5' : 'text-[10px] w-4 h-4'}
+              flex items-center justify-center shadow
+            `}
+          >
+            P
+          </span>
         )}
       </div>
+
       {/* Observation code below stamp */}
-      {(observation_number || observation_letters) && (
+      {obsCode && (
         <span className="text-xs font-mono text-gray-700 leading-none">
-          {observation_number}{observation_letters}
+          {obsCode}
         </span>
       )}
-      {/* Peak day marker */}
-      {is_peak_day && (
+
+      {/* P below stamp for non-white_baby peak days (fallback) */}
+      {is_peak_day && stamp_color !== 'white_baby' && (
         <span className="text-xs font-bold text-rose-600 leading-none">P</span>
       )}
     </div>

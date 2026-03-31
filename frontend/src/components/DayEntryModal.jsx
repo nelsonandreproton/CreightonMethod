@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import api from '../api/client';
 
 // Creighton stamp options
@@ -25,6 +25,8 @@ const STAMP_COLOR_CLASSES = {
 
 const OBS_NUMBERS = ['0', '2', '4', '6', '8', '10'];
 const OBS_LETTERS = ['', 'C', 'K', 'L', 'CK', 'KL', 'CKL', 'AD', 'B'];
+const OBS_FREQUENCIES = ['', 'X1', 'X2', 'X3', 'X4', 'X5', 'AD'];
+const POST_PEAK_DAYS = ['1', '2', '3'];
 const SENSATIONS = ['dry', 'smooth', 'damp', 'wet', 'lubricative'];
 
 export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, onSave, onClose }) {
@@ -33,6 +35,7 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
     stamp_symbol: existing?.stamp_symbol || '',
     observation_number: existing?.observation_number || '',
     observation_letters: existing?.observation_letters || '',
+    observation_frequency: existing?.observation_frequency || '',
     sensation: existing?.sensation || '',
     is_peak_day: existing?.is_peak_day || false,
     is_menstruation: existing?.is_menstruation || false,
@@ -41,14 +44,16 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // When a stamp is selected, auto-fill symbol and menstruation flag
   const selectStamp = (opt) => {
     setForm((prev) => ({
       ...prev,
       stamp_color: opt.color,
       stamp_symbol: opt.symbol,
       is_menstruation: opt.color === 'red',
-      observation_number: opt.color === 'red' || opt.color === 'brown' ? '' : prev.observation_number,
+      // Clear obs codes for menstruation/brown/green_baby
+      observation_number: (opt.color === 'red' || opt.color === 'brown') ? '' : prev.observation_number,
+      // Reset peak day when switching away from white_baby
+      is_peak_day: opt.color === 'white_baby' ? prev.is_peak_day : false,
     }));
   };
 
@@ -57,13 +62,12 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
     setSaving(true);
     setError('');
     try {
-      const payload = {
+      const res = await api.post('/observations', {
         cycle_id: cycleId,
         day_number: dayNumber,
         obs_date: obsDate,
         ...form,
-      };
-      const res = await api.post('/observations', payload);
+      });
       onSave(res.data);
     } catch (err) {
       setError(err.response?.data?.error || 'Error saving');
@@ -71,6 +75,18 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
       setSaving(false);
     }
   };
+
+  const isMenstruation = form.is_menstruation || form.stamp_color === 'brown';
+  const isGreenBaby = form.stamp_color === 'green_baby';
+  const isWhiteBaby = form.stamp_color === 'white_baby';
+  const showObsCodes = !isMenstruation;
+
+  // Build preview code string
+  const previewCode = [
+    form.observation_number,
+    form.observation_letters,
+    form.observation_frequency ? ` ${form.observation_frequency}` : '',
+  ].filter(Boolean).join('');
 
   const selectedStampClass = STAMP_COLOR_CLASSES[form.stamp_color] || 'bg-white border-gray-300';
 
@@ -84,7 +100,11 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-bold text-gray-800">Day {dayNumber}</h2>
-              <p className="text-sm text-gray-500">{new Date(obsDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+              <p className="text-sm text-gray-500">
+                {new Date(obsDate + 'T12:00:00').toLocaleDateString('en-US', {
+                  weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+                })}
+              </p>
             </div>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
           </div>
@@ -94,12 +114,15 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+
             {/* Stamp selector */}
             <div>
               <label className="label">Stamp Type</label>
               <div className="grid grid-cols-4 gap-2">
                 {STAMP_OPTIONS.map((opt) => {
-                  const isSelected = form.stamp_color === opt.color && form.stamp_symbol === opt.symbol;
+                  const isSelected = form.stamp_color === opt.color && (
+                    opt.color === 'green_baby' ? form.stamp_color === opt.color : form.stamp_symbol === opt.symbol
+                  );
                   return (
                     <button
                       key={`${opt.color}-${opt.symbol}`}
@@ -110,9 +133,8 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
                         ${isSelected ? 'border-rose-500 ring-2 ring-rose-300' : 'border-transparent hover:border-gray-200'}
                       `}
                     >
-                      <div
-                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-sm
-                          ${STAMP_COLOR_CLASSES[opt.color]}`}
+                      <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-sm
+                        ${STAMP_COLOR_CLASSES[opt.color]}`}
                       >
                         {opt.color === 'white_baby' || opt.color === 'green_baby' ? '👶' : opt.symbol}
                       </div>
@@ -123,41 +145,104 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
               </div>
             </div>
 
-            {/* Observation code — only relevant for non-menstruation days */}
-            {!form.is_menstruation && form.stamp_color !== 'brown' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Observation Number</label>
-                  <div className="flex flex-wrap gap-2">
-                    {OBS_NUMBERS.map((n) => (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setForm({ ...form, observation_number: n })}
-                        className={`px-3 py-1 rounded-lg border text-sm font-mono font-medium transition-colors
-                          ${form.observation_number === n
-                            ? 'bg-rose-600 text-white border-rose-600'
-                            : 'border-gray-300 text-gray-700 hover:border-rose-400'}`}
-                      >
-                        {n}
-                      </button>
-                    ))}
+            {/* Post-peak day number for green_baby */}
+            {isGreenBaby && (
+              <div>
+                <label className="label">Post-Peak Day</label>
+                <div className="flex gap-3">
+                  {POST_PEAK_DAYS.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setForm({ ...form, stamp_symbol: n })}
+                      className={`w-10 h-10 rounded-full border-2 font-bold text-sm transition-all
+                        ${form.stamp_symbol === n
+                          ? 'bg-green-600 border-green-700 text-white'
+                          : 'border-gray-300 text-gray-700 hover:border-green-500'}`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Peak Day toggle — only for white_baby */}
+            {isWhiteBaby && (
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="peak_day"
+                  checked={form.is_peak_day}
+                  onChange={(e) => setForm({ ...form, is_peak_day: e.target.checked })}
+                  className="w-4 h-4 text-rose-600 rounded"
+                />
+                <label htmlFor="peak_day" className="text-sm font-medium text-gray-700 cursor-pointer">
+                  Peak Day <span className="text-gray-400 font-normal">(P badge shown on stamp)</span>
+                </label>
+              </div>
+            )}
+
+            {/* Observation codes */}
+            {showObsCodes && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Observation Number</label>
+                    <div className="flex flex-wrap gap-2">
+                      {OBS_NUMBERS.map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setForm({ ...form, observation_number: form.observation_number === n ? '' : n })}
+                          className={`px-3 py-1 rounded-lg border text-sm font-mono font-medium transition-colors
+                            ${form.observation_number === n
+                              ? 'bg-rose-600 text-white border-rose-600'
+                              : 'border-gray-300 text-gray-700 hover:border-rose-400'}`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label">Letters</label>
+                    <div className="flex flex-wrap gap-2">
+                      {OBS_LETTERS.map((l) => (
+                        <button
+                          key={l || 'none'}
+                          type="button"
+                          onClick={() => setForm({ ...form, observation_letters: form.observation_letters === l ? '' : l })}
+                          className={`px-3 py-1 rounded-lg border text-sm font-mono font-medium transition-colors
+                            ${form.observation_letters === l
+                              ? 'bg-rose-600 text-white border-rose-600'
+                              : 'border-gray-300 text-gray-700 hover:border-rose-400'}`}
+                        >
+                          {l || '—'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
+
+                {/* Frequency */}
                 <div>
-                  <label className="label">Letters</label>
+                  <label className="label">
+                    Frequency
+                    <span className="text-gray-400 font-normal ml-1">— how many times was this the most fertile observation today?</span>
+                  </label>
                   <div className="flex flex-wrap gap-2">
-                    {OBS_LETTERS.map((l) => (
+                    {OBS_FREQUENCIES.map((f) => (
                       <button
-                        key={l || 'none'}
+                        key={f || 'none'}
                         type="button"
-                        onClick={() => setForm({ ...form, observation_letters: l })}
+                        onClick={() => setForm({ ...form, observation_frequency: form.observation_frequency === f ? '' : f })}
                         className={`px-3 py-1 rounded-lg border text-sm font-mono font-medium transition-colors
-                          ${form.observation_letters === l
+                          ${form.observation_frequency === f && f !== ''
                             ? 'bg-rose-600 text-white border-rose-600'
                             : 'border-gray-300 text-gray-700 hover:border-rose-400'}`}
                       >
-                        {l || '—'}
+                        {f || '—'}
                       </button>
                     ))}
                   </div>
@@ -166,7 +251,7 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
             )}
 
             {/* Sensation */}
-            {!form.is_menstruation && (
+            {!isMenstruation && (
               <div>
                 <label className="label">Sensation</label>
                 <div className="flex flex-wrap gap-2">
@@ -187,20 +272,6 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
               </div>
             )}
 
-            {/* Peak day toggle */}
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="peak_day"
-                checked={form.is_peak_day}
-                onChange={(e) => setForm({ ...form, is_peak_day: e.target.checked })}
-                className="w-4 h-4 text-rose-600 rounded"
-              />
-              <label htmlFor="peak_day" className="text-sm font-medium text-gray-700 cursor-pointer">
-                Peak Day <span className="text-gray-400 font-normal">(last day of most fertile mucus)</span>
-              </label>
-            </div>
-
             {/* Notes */}
             <div>
               <label className="label">Notes <span className="text-gray-400 font-normal">(optional)</span></label>
@@ -214,20 +285,30 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
             </div>
 
             {/* Preview */}
-            <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
-              <div
-                className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-bold text-sm shadow-sm
-                  ${selectedStampClass}`}
-              >
-                {form.stamp_color === 'white_baby' || form.stamp_color === 'green_baby' ? '👶' : form.stamp_symbol}
+            <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-4">
+              {/* Stamp preview */}
+              <div className="relative flex items-center justify-center">
+                <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-bold text-sm shadow-sm ${selectedStampClass}`}>
+                  {isWhiteBaby || isGreenBaby ? '👶' : form.stamp_symbol}
+                </div>
+                {isWhiteBaby && form.is_peak_day && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-rose-600 text-white font-bold rounded-full text-[10px] w-4 h-4 flex items-center justify-center shadow">
+                    P
+                  </span>
+                )}
+                {isGreenBaby && form.stamp_symbol && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold text-green-700">
+                    {form.stamp_symbol}
+                  </span>
+                )}
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-700">
-                  {form.observation_number}{form.observation_letters || ''}
-                  {form.sensation ? ` · ${form.sensation}` : ''}
-                  {form.is_peak_day ? ' · Peak Day (P)' : ''}
+                <p className="text-sm font-mono font-medium text-gray-700">
+                  {previewCode || <span className="text-gray-400 font-sans font-normal">no code</span>}
                 </p>
-                <p className="text-xs text-gray-400">Preview</p>
+                <p className="text-xs text-gray-400">
+                  {form.sensation ? `Sensation: ${form.sensation}` : 'Preview'}
+                </p>
               </div>
             </div>
 
