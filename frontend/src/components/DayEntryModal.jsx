@@ -184,8 +184,8 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
                           onClick={() => setForm({ ...form, stress_indicator: form.stress_indicator === opt ? '' : opt })}
                           className={`px-4 py-2 rounded-lg border-2 text-sm font-mono font-semibold transition-all
                             ${form.stress_indicator === opt
-                              ? 'bg-indigo-600 border-indigo-600 text-white'
-                              : 'border-gray-300 text-gray-700 hover:border-indigo-400'}`}
+                              ? 'bg-red-600 border-red-600 text-white'
+                              : 'border-gray-300 text-gray-700 hover:border-red-400'}`}
                         >
                           {opt}
                         </button>

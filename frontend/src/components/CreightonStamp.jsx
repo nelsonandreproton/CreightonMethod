@@ -138,7 +138,7 @@ export default function CreightonStamp({ observation, size = 'md' }) {
 
       {/* Stress indicator below green_baby day 3 */}
       {stamp_color === 'green_baby' && stamp_symbol === '3' && stress_indicator && (
-        <span className="text-xs font-mono font-semibold text-indigo-600 leading-none">{stress_indicator}</span>
+        <span className="text-xs font-mono font-semibold text-red-600 leading-none">{stress_indicator}</span>
       )}
     </div>
   );
