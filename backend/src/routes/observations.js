@@ -11,7 +11,8 @@ router.post('/', auth, async (req, res) => {
   const {
     cycle_id, day_number, obs_date,
     stamp_color, stamp_symbol,
-    observation_number, observation_letters,
+    observation_number, observation_letters, observation_frequency,
+    stress_indicator,
     sensation, is_peak_day, is_menstruation, notes
   } = req.body;
 
@@ -23,15 +24,17 @@ router.post('/', auth, async (req, res) => {
     const { rows } = await pool.query(
       `INSERT INTO observations
         (cycle_id, day_number, obs_date, stamp_color, stamp_symbol,
-         observation_number, observation_letters, sensation,
-         is_peak_day, is_menstruation, notes)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         observation_number, observation_letters, observation_frequency,
+         stress_indicator, sensation, is_peak_day, is_menstruation, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        ON CONFLICT (cycle_id, day_number) DO UPDATE SET
          obs_date = EXCLUDED.obs_date,
          stamp_color = EXCLUDED.stamp_color,
          stamp_symbol = EXCLUDED.stamp_symbol,
          observation_number = EXCLUDED.observation_number,
          observation_letters = EXCLUDED.observation_letters,
+         observation_frequency = EXCLUDED.observation_frequency,
+         stress_indicator = EXCLUDED.stress_indicator,
          sensation = EXCLUDED.sensation,
          is_peak_day = EXCLUDED.is_peak_day,
          is_menstruation = EXCLUDED.is_menstruation,
@@ -42,6 +45,8 @@ router.post('/', auth, async (req, res) => {
         cycle_id, day_number, obs_date,
         stamp_color, stamp_symbol || null,
         observation_number || null, observation_letters || null,
+        observation_frequency || null,
+        stress_indicator || null,
         sensation || null,
         is_peak_day || false, is_menstruation || false,
         notes || null

@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS observations (
   -- Observation codes
   observation_number VARCHAR(5),    -- 0, 2, 4, 6, 8, 10
   observation_letters VARCHAR(10),  -- C, K, L, CK, KL, AD, etc.
+  observation_frequency VARCHAR(5), -- X1, X2, X3 ... or AD (All Day)
+  -- Post-peak day 3 stress indicator (n=normal, s=stress)
+  stress_indicator VARCHAR(5) CHECK (stress_indicator IN ('n/n', 's/n', 'n/s', 's/s', NULL)),
   -- Sensation
   sensation VARCHAR(20) CHECK (sensation IN ('dry', 'smooth', 'damp', 'wet', 'lubricative', NULL)),
   -- Special markers
