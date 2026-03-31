@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS observations (
   day_number INTEGER NOT NULL CHECK (day_number >= 1 AND day_number <= 100),
   obs_date DATE NOT NULL,
   -- Stamp appearance
-  stamp_color VARCHAR(20) NOT NULL CHECK (stamp_color IN ('red', 'green', 'white', 'yellow', 'brown', 'white_baby')),
+  stamp_color VARCHAR(20) NOT NULL CHECK (stamp_color IN ('red', 'green', 'white', 'yellow', 'brown', 'white_baby', 'green_baby')),
   stamp_symbol VARCHAR(10),         -- H, M, L, VL, B, or baby icon indicator
   -- Observation codes
   observation_number VARCHAR(5),    -- 0, 2, 4, 6, 8, 10

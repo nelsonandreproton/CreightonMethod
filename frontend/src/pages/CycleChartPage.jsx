@@ -118,6 +118,7 @@ export default function CycleChartPage() {
             { color: 'bg-amber-800', label: 'Brown/Spotting' },
             { color: 'bg-green-600', label: 'Dry' },
             { color: 'bg-white border border-gray-300', label: 'Fertile (Mucus)' },
+            { color: 'bg-green-600', label: 'Post-Peak 1–3 👶' },
             { color: 'bg-yellow-400', label: 'Special' },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-1.5">

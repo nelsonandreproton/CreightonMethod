@@ -6,6 +6,7 @@
  *   brown      - Brown/spotting bleeding
  *   green      - Dry day (no mucus)
  *   white_baby - Mucus/fertile (white circle with baby symbol)
+ *   green_baby - Post-peak days 1-3 (green circle with baby symbol)
  *   yellow     - Special / unusual discharge
  *   white      - Plain white (beginning or end of special cases)
  */
@@ -30,6 +31,11 @@ const STAMP_STYLES = {
     bg: 'bg-white',
     border: 'border-gray-400',
     text: 'text-gray-800',
+  },
+  green_baby: {
+    bg: 'bg-green-600',
+    border: 'border-green-700',
+    text: 'text-white',
   },
   yellow: {
     bg: 'bg-yellow-400',
@@ -65,7 +71,7 @@ export default function CreightonStamp({ observation, size = 'md' }) {
   let innerLabel = '';
   if (stamp_color === 'red' || stamp_color === 'brown') {
     innerLabel = stamp_symbol || '';
-  } else if (stamp_color === 'white_baby') {
+  } else if (stamp_color === 'white_baby' || stamp_color === 'green_baby') {
     innerLabel = '👶';
   } else if (stamp_color === 'green') {
     innerLabel = '';
@@ -83,7 +89,7 @@ export default function CreightonStamp({ observation, size = 'md' }) {
         `}
         title={`Day observation: ${stamp_color}${stamp_symbol ? ' ' + stamp_symbol : ''}`}
       >
-        {stamp_color === 'white_baby' ? (
+        {stamp_color === 'white_baby' || stamp_color === 'green_baby' ? (
           <span className="text-base leading-none">👶</span>
         ) : (
           <span className="leading-none">{innerLabel}</span>

@@ -10,6 +10,7 @@ const STAMP_OPTIONS = [
   { color: 'brown', symbol: 'B', label: 'Brown Discharge', description: 'Brown/dark discharge' },
   { color: 'green', symbol: '', label: 'Dry', description: 'No mucus observed' },
   { color: 'white_baby', symbol: '', label: 'Mucus (Fertile)', description: 'Mucus present — potentially fertile' },
+  { color: 'green_baby', symbol: '', label: 'Post-Peak (1-3)', description: 'Post-peak days 1–3: green circle with baby' },
   { color: 'yellow', symbol: '', label: 'Yellow Stamp', description: 'Special / unusual discharge' },
 ];
 
@@ -18,6 +19,7 @@ const STAMP_COLOR_CLASSES = {
   brown: 'bg-amber-800 border-amber-900 text-white',
   green: 'bg-green-600 border-green-700 text-white',
   white_baby: 'bg-white border-gray-400 text-gray-800',
+  green_baby: 'bg-green-600 border-green-700 text-white',
   yellow: 'bg-yellow-400 border-yellow-500 text-gray-800',
 };
 
@@ -112,7 +114,7 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
                         className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-sm
                           ${STAMP_COLOR_CLASSES[opt.color]}`}
                       >
-                        {opt.color === 'white_baby' ? '👶' : opt.symbol}
+                        {opt.color === 'white_baby' || opt.color === 'green_baby' ? '👶' : opt.symbol}
                       </div>
                       <span className="text-xs text-gray-600 text-center leading-tight">{opt.label}</span>
                     </button>
@@ -217,7 +219,7 @@ export default function DayEntryModal({ cycleId, dayNumber, obsDate, existing, o
                 className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-bold text-sm shadow-sm
                   ${selectedStampClass}`}
               >
-                {form.stamp_color === 'white_baby' ? '👶' : form.stamp_symbol}
+                {form.stamp_color === 'white_baby' || form.stamp_color === 'green_baby' ? '👶' : form.stamp_symbol}
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-700">
